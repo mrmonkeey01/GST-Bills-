@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../services/api';
 
 export interface Product {
   id: string;
@@ -77,14 +78,15 @@ interface AppState {
   customers: Customer[];
   invoices: Invoice[];
   businessDetails: BusinessDetails;
-  addProduct: (product: Product) => void;
-  updateProduct: (id: string, product: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
-  addCustomer: (customer: Customer) => void;
-  updateCustomer: (id: string, customer: Partial<Customer>) => void;
-  deleteCustomer: (id: string) => void;
-  addInvoice: (invoice: Invoice) => void;
-  updateInvoiceStatus: (id: string, status: Invoice['status']) => void;
+  fetchData: () => Promise<void>;
+  addProduct: (product: Product) => Promise<void>;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
+  addCustomer: (customer: Customer) => Promise<void>;
+  updateCustomer: (id: string, customer: Partial<Customer>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
+  addInvoice: (invoice: Invoice) => Promise<void>;
+  updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<void>;
   updateBusinessDetails: (details: Partial<BusinessDetails>) => void;
 }
 
@@ -103,37 +105,104 @@ const defaultBusinessDetails: BusinessDetails = {
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
-      products: [
-        { id: '1', name: 'Premium Widget', hsnSac: '8471', price: 1000, taxRate: 18, stock: 50 },
-        { id: '2', name: 'Consulting Services', hsnSac: '9983', price: 5000, taxRate: 18, stock: 999 },
-      ],
-      customers: [
-        { id: '1', name: 'Acme Corp', gstin: '27BBBBB0000B1Z5', billingAddress: '456 Corporate Ave, Mumbai', shippingAddress: '456 Corporate Ave, Mumbai', phone: '9876543211', email: 'billing@acme.com', state: 'Maharashtra' },
-        { id: '2', name: 'Global Tech', gstin: '29CCCCC0000C1Z5', billingAddress: '789 Tech Park, Bangalore', shippingAddress: '789 Tech Park, Bangalore', phone: '9876543212', email: 'accounts@globaltech.com', state: 'Karnataka' },
-      ],
+    (set, get) => ({
+      products: [],
+      customers: [],
       invoices: [],
       businessDetails: defaultBusinessDetails,
-      addProduct: (product) => set((state) => ({ products: [...state.products, product] })),
-      updateProduct: (id, product) => set((state) => ({
-        products: state.products.map((p) => (p.id === id ? { ...p, ...product } : p)),
-      })),
-      deleteProduct: (id) => set((state) => ({ products: state.products.filter((p) => p.id !== id) })),
-      addCustomer: (customer) => set((state) => ({ customers: [...state.customers, customer] })),
-      updateCustomer: (id, customer) => set((state) => ({
-        customers: state.customers.map((c) => (c.id === id ? { ...c, ...customer } : c)),
-      })),
-      deleteCustomer: (id) => set((state) => ({ customers: state.customers.filter((c) => c.id !== id) })),
-      addInvoice: (invoice) => set((state) => ({ invoices: [...state.invoices, invoice] })),
-      updateInvoiceStatus: (id, status) => set((state) => ({
-        invoices: state.invoices.map((i) => (i.id === id ? { ...i, status } : i)),
-      })),
+      fetchData: async () => {
+        try {
+          const [productsRes, customersRes, invoicesRes] = await Promise.all([
+            api.get('/products'),
+            api.get('/customers'),
+            api.get('/invoices'),
+          ]);
+          set({
+            products: productsRes.data,
+            customers: customersRes.data,
+            invoices: invoicesRes.data,
+          });
+        } catch (error) {
+          console.error('Failed to fetch data', error);
+        }
+      },
+      addProduct: async (product) => {
+        try {
+          const res = await api.post('/products', product);
+          set((state) => ({ products: [...state.products, res.data] }));
+        } catch (error) {
+          console.error('Failed to add product', error);
+        }
+      },
+      updateProduct: async (id, product) => {
+        try {
+          const res = await api.put(`/products/${id}`, product);
+          set((state) => ({
+            products: state.products.map((p) => (p.id === id ? { ...p, ...res.data } : p)),
+          }));
+        } catch (error) {
+          console.error('Failed to update product', error);
+        }
+      },
+      deleteProduct: async (id) => {
+        try {
+          await api.delete(`/products/${id}`);
+          set((state) => ({ products: state.products.filter((p) => p.id !== id) }));
+        } catch (error) {
+          console.error('Failed to delete product', error);
+        }
+      },
+      addCustomer: async (customer) => {
+        try {
+          const res = await api.post('/customers', customer);
+          set((state) => ({ customers: [...state.customers, res.data] }));
+        } catch (error) {
+          console.error('Failed to add customer', error);
+        }
+      },
+      updateCustomer: async (id, customer) => {
+        try {
+          const res = await api.put(`/customers/${id}`, customer);
+          set((state) => ({
+            customers: state.customers.map((c) => (c.id === id ? { ...c, ...res.data } : c)),
+          }));
+        } catch (error) {
+          console.error('Failed to update customer', error);
+        }
+      },
+      deleteCustomer: async (id) => {
+        try {
+          await api.delete(`/customers/${id}`);
+          set((state) => ({ customers: state.customers.filter((c) => c.id !== id) }));
+        } catch (error) {
+          console.error('Failed to delete customer', error);
+        }
+      },
+      addInvoice: async (invoice) => {
+        try {
+          const res = await api.post('/invoices', invoice);
+          set((state) => ({ invoices: [...state.invoices, res.data] }));
+        } catch (error) {
+          console.error('Failed to add invoice', error);
+        }
+      },
+      updateInvoiceStatus: async (id, status) => {
+        try {
+          await api.put(`/invoices/${id}`, { status });
+          set((state) => ({
+            invoices: state.invoices.map((i) => (i.id === id ? { ...i, status } : i)),
+          }));
+        } catch (error) {
+          console.error('Failed to update invoice status', error);
+        }
+      },
       updateBusinessDetails: (details) => set((state) => ({
         businessDetails: { ...state.businessDetails, ...details },
       })),
     }),
     {
       name: 'gst-bills-storage',
+      partialize: (state) => ({ businessDetails: state.businessDetails }),
     }
   )
 );

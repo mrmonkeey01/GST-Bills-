@@ -344,6 +344,11 @@ export default function CreateInvoice() {
                 </div>
               )}
 
+              <div className="flex justify-between text-sm pt-2 border-t border-slate-100 mt-2">
+                <span className="text-slate-500 font-medium">Total GST Amount</span>
+                <span className="font-medium text-slate-900">₹{(totals.totalCgst + totals.totalSgst + totals.totalIgst).toFixed(2)}</span>
+              </div>
+
               <div className="pt-4 border-t border-slate-200">
                 <div className="flex justify-between items-center">
                   <span className="text-base font-semibold text-slate-900">Grand Total</span>

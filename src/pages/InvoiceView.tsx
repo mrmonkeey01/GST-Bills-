@@ -104,7 +104,14 @@ export default function InvoiceView() {
                   <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">Qty</th>
                   <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">Rate</th>
                   <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">Taxable Val</th>
-                  <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">GST %</th>
+                  {invoice.totalIgst > 0 ? (
+                    <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">IGST</th>
+                  ) : (
+                    <>
+                      <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">CGST</th>
+                      <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">SGST</th>
+                    </>
+                  )}
                   <th scope="col" className="py-3 text-right text-xs font-semibold text-slate-900 uppercase">Total</th>
                 </tr>
               </thead>
@@ -117,7 +124,23 @@ export default function InvoiceView() {
                     <td className="py-4 text-sm text-slate-600 text-right">{item.quantity}</td>
                     <td className="py-4 text-sm text-slate-600 text-right">₹{item.unitPrice.toFixed(2)}</td>
                     <td className="py-4 text-sm text-slate-600 text-right">₹{item.taxableValue.toFixed(2)}</td>
-                    <td className="py-4 text-sm text-slate-600 text-right">{item.taxRate}%</td>
+                    {invoice.totalIgst > 0 ? (
+                      <td className="py-4 text-sm text-slate-600 text-right">
+                        <div>₹{item.igst?.toFixed(2) || '0.00'}</div>
+                        <div className="text-xs text-slate-400">({item.taxRate || 0}%)</div>
+                      </td>
+                    ) : (
+                      <>
+                        <td className="py-4 text-sm text-slate-600 text-right">
+                          <div>₹{item.cgst?.toFixed(2) || '0.00'}</div>
+                          <div className="text-xs text-slate-400">({((item.taxRate || 0) / 2).toFixed(1)}%)</div>
+                        </td>
+                        <td className="py-4 text-sm text-slate-600 text-right">
+                          <div>₹{item.sgst?.toFixed(2) || '0.00'}</div>
+                          <div className="text-xs text-slate-400">({((item.taxRate || 0) / 2).toFixed(1)}%)</div>
+                        </td>
+                      </>
+                    )}
                     <td className="py-4 text-sm font-medium text-slate-900 text-right">₹{item.total.toFixed(2)}</td>
                   </tr>
                 ))}
@@ -175,6 +198,11 @@ export default function InvoiceView() {
                   <span className="font-medium text-slate-900">₹{invoice.totalCess.toFixed(2)}</span>
                 </div>
               )}
+
+              <div className="flex justify-between text-sm pt-2 border-t border-slate-100 mt-2">
+                <span className="text-slate-600 font-medium">Total GST Amount</span>
+                <span className="font-medium text-slate-900">₹{(invoice.totalCgst + invoice.totalSgst + invoice.totalIgst).toFixed(2)}</span>
+              </div>
 
               <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">
                 <span className="text-base font-bold text-slate-900">Grand Total</span>

@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password      String
+  business_name String?
+  gstin         String?
+  created_at    DateTime @default(now())
+
+  @@map("users")
+}
+
+model Customer {
+  id      String    @id @default(uuid())
+  name    String
+  gstin   String?
+  phone   String?
+  email   String?
+  address String?
+  
+  invoices Invoice[]
+
+  @@map("customers")
+}
+
+model Product {
+  id       String        @id @default(uuid())
+  name     String
+  hsn_code String?
+  gst_rate Float
+  price    Float
+  stock    Int           @default(0)
+  
+  items    InvoiceItem[]
+
+  @@map("products")
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  invoice_number String        @unique
+  customer_id    String
+  customer       Customer      @relation(fields: [customer_id], references: [id])
+  invoice_date   DateTime      @default(now())
+  subtotal       Float
+  gst_total      Float
+  grand_total    Float
+  
+  items          InvoiceItem[]
+  
+  // Extra fields to support the existing frontend without breaking it
+  status         String        @default("Draft")
+  metadata       String?       // JSON string for extra frontend fields
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id         String  @id @default(uuid())
+  invoice_id String
+  invoice    Invoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id])
+  quantity   Int
+  price      Float
+  gst_rate   Float
+  total      Float
+  
+  // Extra fields to support the existing frontend without breaking it
+  metadata   String?       // JSON string for extra frontend fields
+
+  @@map("invoice_items")
+}

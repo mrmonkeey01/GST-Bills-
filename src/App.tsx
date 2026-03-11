@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useStore } from './store/useStore';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -9,6 +11,12 @@ import CreateInvoice from './pages/CreateInvoice';
 import InvoiceView from './pages/InvoiceView';
 
 export default function App() {
+  const fetchData = useStore((state) => state.fetchData);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   return (
     <BrowserRouter>
       <Routes>
