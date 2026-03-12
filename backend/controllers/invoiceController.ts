@@ -71,6 +71,20 @@ export const createInvoice = async (req: Request, res: Response) => {
       include: { items: true }
     });
 
+    // Deduct stock for each item
+    for (const item of items) {
+      if (item.productId && item.quantity) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity
+            }
+          }
+        }).catch(err => console.error(`Failed to decrement stock for product ${item.productId}`, err));
+      }
+    }
+
     res.status(201).json({ id: invoice.id, ...data });
   } catch (error) {
     console.error(error);
